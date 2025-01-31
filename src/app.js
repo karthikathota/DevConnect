@@ -7,6 +7,7 @@ const { validateSignUpData } = require("./utils/validation");
 const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
+const { userAuth } = require("./middleware/auth");
 
 require("dotenv").config();
 
@@ -66,20 +67,14 @@ app.post("/login", async (req, res) => {
 });
 
 // Profile
-
-app.get("/profile", async (req, res) => {
-  const cookies = req.cookies;
-
-  const { token } = cookies;
-  console.log(token);
-  const decoded = await jwt.verify(token, "Dev@connect");
-
-  const { _id } = decoded;
-  const user = await User.findById(_id);
-  res.send(user);
+app.get("/profile", userAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    res.send(user);
+  } catch (error) {
+    res.status(500).send("Internal Server Error");
+  }
 });
-
-app.get("/profile", async (req, res) => {});
 
 // If multiple people with same mail return only one
 app.get("/user/findOne", async (req, res) => {
