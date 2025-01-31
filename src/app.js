@@ -4,9 +4,14 @@ const connectDB = require("./config/database");
 const User = require("./models/user");
 const validator = require("validator");
 const { validateSignUpData } = require("./utils/validation");
-app.use(express.json());
 const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+
 require("dotenv").config();
+
+app.use(express.json());
+app.use(cookieParser());
 
 // Creating a new user
 app.post("/signup", async (req, res) => {
@@ -31,6 +36,7 @@ app.post("/signup", async (req, res) => {
   }
 });
 
+// User Login
 app.post("/login", async (req, res) => {
   try {
     const { emailId, password } = req.body;
@@ -42,6 +48,14 @@ app.post("/login", async (req, res) => {
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (isPasswordValid) {
+      // Creating JWT Token
+
+      const token = jwt.sign({ _id: user._id }, "Dev@connect");
+      console.log(token);
+
+      // Setting the Token in Cookie
+
+      res.cookie("token", token);
       return res.status(200).send("User login successfull");
     } else {
       res.status(400).send("Invalid Password");
@@ -50,6 +64,22 @@ app.post("/login", async (req, res) => {
     res.status(400).send("Error Occured" + err.message);
   }
 });
+
+// Profile
+
+app.get("/profile", async (req, res) => {
+  const cookies = req.cookies;
+
+  const { token } = cookies;
+  console.log(token);
+  const decoded = await jwt.verify(token, "Dev@connect");
+
+  const { _id } = decoded;
+  const user = await User.findById(_id);
+  res.send(user);
+});
+
+app.get("/profile", async (req, res) => {});
 
 // If multiple people with same mail return only one
 app.get("/user/findOne", async (req, res) => {
