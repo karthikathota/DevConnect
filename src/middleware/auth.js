@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
-const { User } = require("../models/user");
-User;
+const User = require("../models/user");
+
 const userAuth = async (req, res, next) => {
   try {
     // Getting the token from cookies
@@ -20,13 +20,11 @@ const userAuth = async (req, res, next) => {
     if (!userFound) {
       throw new Error("User not found");
     }
-
     // Attach user to the request object
     req.user = userFound;
-    next(); // Continue to the route handler
+    next();
   } catch (err) {
-    console.error("Authentication error:", err); // Log the error
-    res.status(400).send(err.message); // Send error response to the client
+    res.status(400).send(err.message);
   }
 };
 

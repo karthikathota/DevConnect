@@ -47,12 +47,12 @@ app.post("/login", async (req, res) => {
       return res.status(400).send("User does not exist");
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await user.validatePassword(password);
     if (isPasswordValid) {
       // Creating JWT Token
 
-      const token = jwt.sign({ _id: user._id }, "Dev@connect");
-      console.log(token);
+      const token = await user.getJWT();
+      //console.log(token);
 
       // Setting the Token in Cookie
 
