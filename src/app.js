@@ -4,7 +4,6 @@ const connectDB = require("./config/database");
 const User = require("./models/user");
 const validator = require("validator");
 const { validateSignUpData } = require("./utils/validation");
-const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
 const { userAuth } = require("./middleware/auth");
@@ -14,67 +13,16 @@ require("dotenv").config();
 app.use(express.json());
 app.use(cookieParser());
 
-// Creating a new user
-app.post("/signup", async (req, res) => {
-  try {
-    //Validate SignUp Data
-    validateSignUpData(req);
+// Importing Routes
+const authRouter = require("./routes/auth");
+const requestRouter = require("./routes/request");
+const profileRouter = require("./routes/profile");
 
-    const { firstName, lastName, emailId, password } = req.body;
-    // Encrypt Password
-    const passwordHash = await bcrypt.hash(password, 10);
-    // Creating a new instance of the user model
-    const user = new User({
-      firstName,
-      lastName,
-      emailId,
-      password: passwordHash,
-    });
-    await user.save();
-    res.send("User added successfully");
-  } catch (err) {
-    res.status(400).send("An error occured:" + err.message);
-  }
-});
+// Using routes
 
-// User Login
-app.post("/login", async (req, res) => {
-  try {
-    const { emailId, password } = req.body;
-
-    const user = await User.findOne({ emailId: emailId });
-    if (!user) {
-      return res.status(400).send("User does not exist");
-    }
-
-    const isPasswordValid = await user.validatePassword(password);
-    if (isPasswordValid) {
-      // Creating JWT Token
-
-      const token = await user.getJWT();
-      //console.log(token);
-
-      // Setting the Token in Cookie
-
-      res.cookie("token", token);
-      return res.status(200).send("User login successfull");
-    } else {
-      res.status(400).send("Invalid Password");
-    }
-  } catch (err) {
-    res.status(400).send("Error Occured" + err.message);
-  }
-});
-
-// Profile
-app.get("/profile", userAuth, async (req, res) => {
-  try {
-    const user = req.user;
-    res.send(user);
-  } catch (error) {
-    res.status(500).send("Internal Server Error");
-  }
-});
+app.use("/", authRouter);
+app.use("/", requestRouter);
+app.use("/", profileRouter);
 
 // If multiple people with same mail return only one
 app.get("/user/findOne", async (req, res) => {
