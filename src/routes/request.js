@@ -17,7 +17,7 @@ requestRouter.post(
       const fromUserId = req.user.id;
       const toUserId = req.params.toUserId;
       const status = req.params.status;
-      const allowedStatus = ["ignore", "interested"];
+      const allowedStatus = ["ignoring", "interested"];
 
       const toUser = await User.findById({ _id: toUserId });
 
@@ -27,12 +27,6 @@ requestRouter.post(
 
       if (!allowedStatus.includes(status)) {
         res.status(400).send("Status invalid");
-      }
-
-      // Checking if fromUserId is equal to toUserId
-
-      if (fromUserId === toUserId) {
-        res.status(400).send("Cannot send connection to yourslef");
       }
 
       // Checking if connection request is duplicate
@@ -56,13 +50,46 @@ requestRouter.post(
       const data = await connectionRequest.save();
 
       res.json({
-        message: "Succesfully sent connection request",
+        message:
+          req.user.firstName + " is " + status + " in " + toUser.firstName,
         data,
       });
     } catch (err) {
-      res.send(err.messafe);
+      res.send(err.message);
     }
   }
 );
 
+requestRouter.post(
+  "/request/review/:status/:requestId",
+  userAuth,
+  async (req, res) => {
+    try {
+      const loggedInUser = req.user;
+      const { status, requestId } = req.params;
+
+      const allowedStatus = ["accepted", "rejected"];
+
+      if (!allowedStatus.includes(status)) {
+        return res.status(400).send("Invalid status");
+      }
+
+      const connectionRequest = await ConnectionRequestModel.findOne({
+        _id: requestId,
+        toUserId: loggedInUser._id,
+      });
+
+      if (!connectionRequest) {
+        return res.status(400).send("Cannot find request");
+      }
+
+      connectionRequest.status = status;
+
+      const data = await connectionRequest.save();
+      res.json({ message: "Connection request " + status, data });
+    } catch (err) {
+      res.status(400).send("Error Occured: " + err.message);
+    }
+  }
+);
 module.exports = requestRouter;
