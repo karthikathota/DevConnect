@@ -5,6 +5,7 @@ const cookieParser = require("cookie-parser");
 const authRouter = require("./routes/auth");
 const requestRouter = require("./routes/request");
 const profileRouter = require("./routes/profile");
+const userRouter = require("./routes/user");
 
 require("dotenv").config();
 
@@ -20,6 +21,8 @@ app.use("/", requestRouter);
 // User profile routes
 app.use("/", profileRouter);
 
+// Users Routes
+app.use("/", userRouter);
 // Connecting to DB
 connectDB()
   .then(() => {
