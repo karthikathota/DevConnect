@@ -88,6 +88,129 @@ Server runs on: `http://localhost:7777`
 
 ---
 
+## 📌 API Endpoints (with curl examples)
+
+### 🔐 Authentication
+
+#### Signup
+
+```bash
+curl --location 'http://localhost:7777/signup' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "firstName": "YourFirstName",
+  "lastName": "YourLastName",
+  "emailId": "your@example.com",
+  "password": "yourpassword",
+  "age": "30",
+  "gender": "yourgender",
+  "about": "short bio"
+}'
+```
+
+#### Login
+
+```bash
+curl --location 'http://localhost:7777/login' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "emailId": "your@example.com",
+  "password": "yourpassword"
+}'
+```
+
+#### Logout
+
+```bash
+curl --location 'http://localhost:7777/logout' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: token=<your_token>' \
+--data-raw '{}'
+```
+
+---
+
+### 📩 Requests
+
+#### Send Interest Request
+
+```bash
+curl --location 'http://localhost:7777/request/send/interested/<targetUserId>' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: token=<your_token>' \
+--data-raw '{}'
+```
+
+#### Review Request (Accept/Reject)
+
+```bash
+curl --location 'http://localhost:7777/request/review/rejected/<requestId>' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: token=<your_token>' \
+--data-raw '{}'
+```
+
+---
+
+### 👥 User
+
+#### View Received Requests
+
+```bash
+curl --location 'http://localhost:7777/user/requests/received' \
+--header 'Cookie: token=<your_token>' \
+--data ''
+```
+
+#### View Connections
+
+```bash
+curl --location 'http://localhost:7777/user/connections' \
+--header 'Cookie: token=<your_token>' \
+--data ''
+```
+
+---
+
+### 📰 Feed
+
+```bash
+curl --location 'http://localhost:7777/feed' \
+--header 'Cookie: token=<your_token>'
+```
+
+---
+
+### 👤 Profile
+
+#### View Profile
+
+```bash
+curl --location 'http://localhost:7777/profile/view' \
+--header 'Cookie: token=<your_token>'
+```
+
+#### Edit Profile
+
+```bash
+curl --location --request PATCH 'http://localhost:7777/profile/edit' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: token=<your_token>' \
+--data '{
+  "firstName": "NewName"
+}'
+```
+
+---
+
+## ✅ Notes
+
+- Replace `<your_token>` with a valid JWT token after login.
+- Replace placeholders like `<targetUserId>` and `<requestId>` with actual IDs from your database.
+- Use tools like [Postman](https://www.postman.com/) or the provided `curl` for testing.
+
+---
+
 ## 🌐 CORS Configuration
 
 This app is preconfigured to accept frontend requests from:
