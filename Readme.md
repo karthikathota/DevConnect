@@ -4,25 +4,6 @@ DevConnect is a Node.js-based backend API application designed for user authenti
 
 ---
 
-## 📁 Project Structure
-
-```
-DevConnect/
-├── config/
-│   └── database.js
-├── routes/
-│   ├── auth.js
-│   ├── request.js
-│   ├── profile.js
-│   └── user.js
-├── .env
-├── app.js
-├── package.json
-└── README.md
-```
-
----
-
 ## 🚀 Features
 
 - User Authentication (Login, Register, etc.)
