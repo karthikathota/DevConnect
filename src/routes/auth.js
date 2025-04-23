@@ -4,60 +4,113 @@ const { validateSignUpData } = require("../utils/validation");
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
 require("dotenv").config();
-app.use(express.json());
 
+app.use(express.json());
 const authRouter = express.Router();
 
-// Creating a new user
+// Signup Route
 authRouter.post("/signup", async (req, res) => {
   try {
-    //Validate SignUp Data
     validateSignUpData(req);
 
-    const { firstName, lastName, emailId, password, gender } = req.body;
-    // Encrypt Password
+    const {
+      firstName,
+      lastName,
+      emailId,
+      password,
+      age,
+      gender,
+      photoUrl,
+      about,
+      skills,
+      socialLinks,
+      pinnedTopics,
+    } = req.body;
+
     const passwordHash = await bcrypt.hash(password, 10);
-    // Creating a new instance of the user model
+
     const user = new User({
       firstName,
       lastName,
       emailId,
       password: passwordHash,
+      age,
       gender,
+      photoUrl,
+      about,
+      skills,
+      socialLinks,
+      pinnedTopics,
     });
+
     await user.save();
-    res.send("User added successfully");
+    res.status(200).json({ message: "User added successfully" });
   } catch (err) {
-    res.status(400).send("An error occured:" + err.message);
+    res.status(400).json({ error: "An error occurred: " + err.message });
   }
 });
 
-// User Login
+// Login Route
 authRouter.post("/login", async (req, res) => {
   try {
     const { emailId, password } = req.body;
 
-    const user = await User.findOne({ emailId: emailId });
+    if (!emailId || !password) {
+      return res
+        .status(400)
+        .json({ error: "Email and password are required." });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailId)) {
+      return res.status(400).json({ error: "Invalid email format." });
+    }
+
+    const user = await User.findOne({ emailId });
     if (!user) {
-      return res.status(400).send("User does not exist");
+      return res.status(400).json({ error: "User does not exist" });
     }
 
     const isPasswordValid = await user.validatePassword(password);
-    if (isPasswordValid) {
-      // Creating JWT Token
-
-      const token = await user.getJWT();
-      //  console.log(token);
-
-      // Setting the Token in Cookie
-
-      res.cookie("token", token);
-      return res.status(200).send("User login successfull");
-    } else {
-      res.status(400).send("Invalid Password");
+    if (!isPasswordValid) {
+      return res.status(400).json({ error: "Invalid Password" });
     }
+
+    const token = await user.getJWT();
+    res.cookie("token", token, {
+      expires: new Date(Date.now() + 8 * 3600000),
+    });
+
+    const {
+      firstName,
+      lastName,
+      emailId: email,
+      photoUrl,
+      age,
+      gender,
+      about,
+      skills,
+      socialLinks,
+      pinnedTopics,
+    } = user;
+
+    res.status(200).json({
+      message: "Login successful",
+      user: {
+        firstName,
+        lastName,
+        email,
+        photoUrl,
+        age,
+        gender,
+        about,
+        skills,
+        socialLinks,
+        pinnedTopics,
+      },
+    });
   } catch (err) {
-    res.status(400).send("Error Occured" + err.message);
+    res.status(400).json({ error: "Error occurred: " + err.message });
   }
 });
 
@@ -66,7 +119,7 @@ authRouter.post("/logout", async (req, res) => {
   res.cookie("token", null, {
     expires: new Date(Date.now()),
   });
-  res.send("User Logged Out Succesfully");
+  res.status(200).json({ message: "User Logged Out Successfully" });
 });
 
 module.exports = authRouter;
