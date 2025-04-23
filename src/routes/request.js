@@ -68,12 +68,15 @@ requestRouter.post(
       const loggedInUser = req.user;
       const { status, requestId } = req.params;
 
+      // Allowed statuses for the connection request
       const allowedStatus = ["accepted", "rejected"];
 
+      // Check if the status provided is valid
       if (!allowedStatus.includes(status)) {
         return res.status(400).send("Invalid status");
       }
 
+      // Find the connection request in the database
       const connectionRequest = await ConnectionRequestModel.findOne({
         _id: requestId,
         toUserId: loggedInUser._id,
@@ -83,13 +86,37 @@ requestRouter.post(
         return res.status(400).send("Cannot find request");
       }
 
+      // Check if the request is already in the desired status
+      if (connectionRequest.status === status) {
+        return res.status(400).send(`Request is already ${status}`);
+      }
+
+      // Prevent changing from accepted to rejected or vice versa
+      if (connectionRequest.status === "accepted" && status === "rejected") {
+        return res
+          .status(400)
+          .send(
+            "This request has already been accepted and cannot be rejected."
+          );
+      }
+
+      if (connectionRequest.status === "rejected" && status === "accepted") {
+        return res
+          .status(400)
+          .send(
+            "This request has already been rejected and cannot be accepted."
+          );
+      }
+
+      // Update the status of the request to accepted or rejected
       connectionRequest.status = status;
 
       const data = await connectionRequest.save();
-      res.json({ message: "Connection request " + status, data });
+      res.json({ message: `Connection request ${status}`, data });
     } catch (err) {
-      res.status(400).send("Error Occured: " + err.message);
+      res.status(400).send("Error Occurred: " + err.message);
     }
   }
 );
+
 module.exports = requestRouter;

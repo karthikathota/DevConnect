@@ -2,12 +2,13 @@ const mongoose = require("mongoose");
 const validator = require("validator");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+
 const userSchema = new mongoose.Schema(
   {
     firstName: {
       type: String,
       required: true,
-      minLength: 4,
+      minLength: 1,
       maxLength: 20,
     },
     lastName: {
@@ -15,7 +16,7 @@ const userSchema = new mongoose.Schema(
     },
     emailId: {
       type: String,
-      loswecase: true,
+      lowercase: true,
       required: true,
       unique: true,
       trim: true,
@@ -23,11 +24,6 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
-      // validate(value) {
-      //   if (!validator.isStrongPassword(value)) {
-      //     throw new Error("Enter stronger password");
-      //   }
-      // },
     },
     age: {
       type: Number,
@@ -43,8 +39,7 @@ const userSchema = new mongoose.Schema(
     },
     photoUrl: {
       type: String,
-      default:
-        "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.freepik.com%2Ffree-photos-vectors%2Fdefault-user&psig=AOvVaw28s2Z0T7IHVVOLWQCEhhQP&ust=1730960425544000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCMjki5yIx4kDFQAAAAAdAAAAABAJ",
+      default: "https://cdn-icons-png.flaticon.com/512/6681/6681204.png",
     },
     about: {
       type: String,
@@ -53,15 +48,18 @@ const userSchema = new mongoose.Schema(
     skills: {
       type: [String],
     },
+    socialLinks: {
+      type: Map,
+      of: String,
+      default: {},
+    },
   },
   { timestamps: true }
 );
 
 userSchema.methods.getJWT = async function () {
   const user = this;
-
   const token = await jwt.sign({ _id: user._id }, "Dev@connect");
-
   return token;
 };
 
@@ -74,7 +72,6 @@ userSchema.methods.validatePassword = async function (passwordInputByUser) {
   );
   return isPasswordValid;
 };
-// User model created.
-const User = mongoose.model("User", userSchema);
 
+const User = mongoose.model("User", userSchema);
 module.exports = User;

@@ -4,20 +4,32 @@ const User = require("../models/user");
 const { userAuth } = require("../middleware/auth");
 const bcrypt = require("bcrypt");
 const ConnectionRequestModel = require("../models/connectionRequest");
+const USER_SAFE_DATA =
+  "firstName lastName emailId age gender photoUrl about skills socialLinks";
 
+// Checking received requests
 userRouter.get("/user/requests/received", userAuth, async (req, res) => {
   try {
     const loggedInUser = req.user;
     const connectionRequest = await ConnectionRequestModel.find({
       toUserId: loggedInUser._id,
       status: "interested",
-    }).populate("fromUserId", ["firstName", "lastName"]);
+    }).populate("fromUserId", [
+      "firstName",
+      "lastName",
+      "gender",
+      "photoUrl",
+      "age",
+      "about",
+      "skills",
+    ]);
     res.send(connectionRequest);
   } catch (error) {
     res.send("Error Occured: " + error.message);
   }
 });
 
+// Checking all the users connections
 userRouter.get("/user/connections", userAuth, async (req, res) => {
   try {
     const loggedInUser = req.user;
@@ -27,8 +39,8 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
         { fromUserId: loggedInUser._id, status: "accepted" },
       ],
     })
-      .populate("fromUserId", ["firstName", "lastName"])
-      .populate("toUserId", ["firstName", "lastName"]);
+      .populate("fromUserId", USER_SAFE_DATA)
+      .populate("toUserId", USER_SAFE_DATA);
 
     const data = connectionRequests.map((row) => {
       if (row.fromUserId._id.toString() === loggedInUser._id.toString()) {
@@ -37,12 +49,13 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
         return row.fromUserId;
       }
     });
-    res.send(data);
+    res.json({ data });
   } catch (error) {
     res.send("Error Occured: " + error.message);
   }
 });
 
+// Populate user feed
 userRouter.get("/feed", userAuth, async (req, res) => {
   try {
     const loggedInUser = req.user;
@@ -55,11 +68,17 @@ userRouter.get("/feed", userAuth, async (req, res) => {
     const hideUserFromFeed = new Set();
 
     connectionRequests.forEach((connection) => {
-      hideUserFromFeed.add(connection.fromUserId.toString());
-      hideUserFromFeed.add(connection.toUserId.toString());
+      hideUserFromFeed.add(connection.fromUserId);
+      hideUserFromFeed.add(connection.toUserId);
     });
-    console.log(hideUserFromFeed);
-    res.send(connectionRequests);
+    // Getting all the users with not connections to logged in User
+    const users = await User.find({
+      $and: [
+        { _id: { $nin: Array.from(hideUserFromFeed) } },
+        { _id: { $ne: loggedInUser._id } },
+      ],
+    }).select(USER_SAFE_DATA);
+    res.json({ users });
   } catch (error) {
     res.status(400).send("Error Occured: " + error.message);
   }

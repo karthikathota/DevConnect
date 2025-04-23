@@ -9,32 +9,41 @@ const {
   validateSignUpData,
 } = require("../utils/validation");
 require("dotenv").config();
+
 app.use(express.json());
 
 // Profile View
 profileRouter.get("/profile/view", userAuth, async (req, res) => {
   try {
     const user = req.user;
-    res.send(user);
+    res
+      .status(200)
+      .json({ message: "Profile fetched successfully", data: user });
   } catch (error) {
-    res.status(500).send("Internal Server Error");
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-// Profile Edit
 profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
   try {
     if (!validateEditProfile(req)) {
-      throw new Error("Cannot update some of the feilds");
+      throw new Error("Cannot update some of the fields");
     }
+
     const loggedInUser = req.user;
 
-    Object.keys(req.body).forEach((key) => (loggedInUser[key] = req.body[key]));
+    Object.keys(req.body).forEach((key) => {
+      loggedInUser[key] = req.body[key];
+    });
+
     await loggedInUser.save();
 
-    res.send(`${loggedInUser.firstName}, your profile was updated succesfully`);
+    res.status(200).json({
+      message: `${loggedInUser.firstName}, your profile was updated successfully`,
+      data: loggedInUser,
+    });
   } catch (error) {
-    res.status(400).send("Error Ocuured: " + error.message);
+    res.status(400).json({ error: "Error occurred: " + error.message });
   }
 });
 
@@ -43,25 +52,16 @@ profileRouter.patch("/profile/forgotpassword", userAuth, async (req, res) => {
   try {
     const { newPassword } = req.body;
 
-    // Check if current password exists and if it's correct
     const loggedInUser = req.user;
 
-    // Use the existing validatePassword method from your schema
-    // const isMatch = await loggedInUser.validatePassword(currentPassword);
-    // if (!isMatch) {
-    //   throw new Error("Current password is incorrect");
-    // }
-
-    // Hash the new password before saving (assuming bcrypt)
     loggedInUser.password = await bcrypt.hash(newPassword, 10);
-
     await loggedInUser.save();
 
-    res.send(
-      `${loggedInUser.firstName}, your password was updated successfully`
-    );
+    res.status(200).json({
+      message: `${loggedInUser.firstName}, your password was updated successfully`,
+    });
   } catch (error) {
-    res.status(400).send("Error occurred: " + error.message);
+    res.status(400).json({ error: "Error occurred: " + error.message });
   }
 });
 
