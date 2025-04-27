@@ -1,14 +1,10 @@
 const express = require("express");
-const app = express();
+const requestRouter = express.Router();
 const { userAuth } = require("../middleware/auth");
 const User = require("../models/user");
-const bcrypt = require("bcrypt");
 const ConnectionRequestModel = require("../models/connectionRequest");
-require("dotenv").config();
-app.use(express.json());
 
-const requestRouter = express.Router();
-
+// Send a connection request
 requestRouter.post(
   "/request/send/:status/:toUserId",
   userAuth,
@@ -22,14 +18,13 @@ requestRouter.post(
       const toUser = await User.findById({ _id: toUserId });
 
       if (!toUser) {
-        res.status(400).send("User not found");
+        return res.status(400).send("User not found");
       }
 
       if (!allowedStatus.includes(status)) {
-        res.status(400).send("Status invalid");
+        return res.status(400).send("Status invalid");
       }
 
-      // Checking if connection request is duplicate
       const existingConnectionRequest = await ConnectionRequestModel.findOne({
         $or: [
           { fromUserId: fromUserId, toUserId: toUserId },
@@ -38,28 +33,28 @@ requestRouter.post(
       });
 
       if (existingConnectionRequest) {
-        res.status(400).send("Request already exists");
+        return res.status(400).send("Request already exists");
       }
 
-      // Creating a connection request
       const connectionRequest = new ConnectionRequestModel({
         fromUserId,
         toUserId,
         status,
       });
+
       const data = await connectionRequest.save();
 
-      res.json({
-        message:
-          req.user.firstName + " is " + status + " in " + toUser.firstName,
+      return res.json({
+        message: `${req.user.firstName} is ${status} in ${toUser.firstName}`,
         data,
       });
     } catch (err) {
-      res.send(err.message);
+      return res.status(500).send("Error occurred: " + err.message);
     }
   }
 );
 
+// Review a connection request (accept or reject)
 requestRouter.post(
   "/request/review/:status/:requestId",
   userAuth,
@@ -67,16 +62,12 @@ requestRouter.post(
     try {
       const loggedInUser = req.user;
       const { status, requestId } = req.params;
-
-      // Allowed statuses for the connection request
       const allowedStatus = ["accepted", "rejected"];
 
-      // Check if the status provided is valid
       if (!allowedStatus.includes(status)) {
         return res.status(400).send("Invalid status");
       }
 
-      // Find the connection request in the database
       const connectionRequest = await ConnectionRequestModel.findOne({
         _id: requestId,
         toUserId: loggedInUser._id,
@@ -86,35 +77,29 @@ requestRouter.post(
         return res.status(400).send("Cannot find request");
       }
 
-      // Check if the request is already in the desired status
       if (connectionRequest.status === status) {
         return res.status(400).send(`Request is already ${status}`);
       }
 
-      // Prevent changing from accepted to rejected or vice versa
       if (connectionRequest.status === "accepted" && status === "rejected") {
         return res
           .status(400)
-          .send(
-            "This request has already been accepted and cannot be rejected."
-          );
+          .send("This request has already been accepted and cannot be rejected.");
       }
 
       if (connectionRequest.status === "rejected" && status === "accepted") {
         return res
           .status(400)
-          .send(
-            "This request has already been rejected and cannot be accepted."
-          );
+          .send("This request has already been rejected and cannot be accepted.");
       }
 
-      // Update the status of the request to accepted or rejected
       connectionRequest.status = status;
 
       const data = await connectionRequest.save();
-      res.json({ message: `Connection request ${status}`, data });
+
+      return res.json({ message: `Connection request ${status}`, data });
     } catch (err) {
-      res.status(400).send("Error Occurred: " + err.message);
+      return res.status(500).send("Error occurred: " + err.message);
     }
   }
 );

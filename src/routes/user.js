@@ -55,6 +55,23 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
   }
 });
 
+// routes/user.js or wherever you handle user routes
+
+userRouter.post("/user/search", async (req, res) => {
+  const { email } = req.body;
+  console.log(email)
+  if (!email) return res.status(400).json({ error: "Email query is required" });
+
+  try {
+    const user = await User.find({ emailId:email }); // adjust based on your DB
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    return res.json({ user });
+  } catch (err) {
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
 // Populate user feed
 userRouter.get("/feed", userAuth, async (req, res) => {
   try {
