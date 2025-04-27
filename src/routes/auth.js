@@ -27,6 +27,15 @@ authRouter.post("/signup", async (req, res) => {
       pinnedTopics,
     } = req.body;
 
+    // Check if user already exists
+    const existingUser = await User.findOne({ emailId });
+    if (existingUser) {
+      return res.status(400).json({
+        error:
+          "Email already registered. Please use a different email or login.",
+      });
+    }
+
     const passwordHash = await bcrypt.hash(password, 10);
 
     const user = new User({
@@ -46,6 +55,12 @@ authRouter.post("/signup", async (req, res) => {
     await user.save();
     res.status(200).json({ message: "User added successfully" });
   } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({
+        error:
+          "Email already registered. Please use a different email or login.",
+      });
+    }
     res.status(400).json({ error: "An error occurred: " + err.message });
   }
 });
@@ -68,12 +83,12 @@ authRouter.post("/login", async (req, res) => {
 
     const user = await User.findOne({ emailId });
     if (!user) {
-      return res.status(400).json({ error: "User does not exist" });
+      return res.status(400).json({ error: "Invalid Credentials" });
     }
 
     const isPasswordValid = await user.validatePassword(password);
     if (!isPasswordValid) {
-      return res.status(400).json({ error: "Invalid Password" });
+      return res.status(400).json({ error: "Invalid Credentials" });
     }
 
     const token = await user.getJWT();
