@@ -28,7 +28,7 @@ DevConnect is a Node.js-based backend API application designed for user authenti
 
 Before starting, ensure you have the following installed:
 
-- [Node.js](https://nodejs.org/) (v14+ recommended)
+- [Node.js](https://nodejs.org/)
 - [MongoDB](https://www.mongodb.com/)
 
 ---
